@@ -1,0 +1,4 @@
+# https://developers.home-assistant.io/docs/add-ons/repository#repository-configuration
+name: Home assistant Addon Repo.
+url: "https://github.com/zedr32/the_frame"
+maintainer: zedr32
