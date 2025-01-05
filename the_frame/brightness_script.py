@@ -1,46 +1,82 @@
 import os
-from samsungtvws.art import SamsungTVArt
+import asyncio
+import urllib3
 
-def main():
-    # Read configuration from environment variables
-    TV_IP = os.getenv("TV_IP", "192.168.1.33")
-    TOKEN_FILE = os.getenv("TOKEN_FILE", "/config/samsung_token.txt")
+# Suppress insecure request warnings
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-    tv = SamsungTVArt(
+from samsungtvws.async_art import SamsungTVAsyncArt
+from samsungtvws import exceptions
+
+# Environment Variables
+TV_IP = os.getenv("TV_IP", "192.168.1.33")
+PORT = int(os.getenv("PORT", 8002))
+
+# Paths for token and brightness files within /share
+TOKEN_FILE = "/share/samsung_token.txt"
+BRIGHTNESS_OUTPUT_FILE = "/share/brightness.txt"
+
+async def main():
+    print(f"Starting Samsung Frame Add-on with TV_IP: {TV_IP} and PORT: {PORT}")
+    print(f"Using TOKEN_FILE: {TOKEN_FILE}")
+    
+    # Initialize the SamsungTVAsyncArt instance
+    tv = SamsungTVAsyncArt(
         host=TV_IP,
-        port=8002,
-        token_file=TOKEN_FILE,
-        name="BrightnessScript"
+        port=PORT,
+        token_file=TOKEN_FILE,  # Handles token generation if not present
     )
-
-    # Check if token file exists; if not, generate token
-    if not os.path.exists(TOKEN_FILE):
-        print(f"Token file '{TOKEN_FILE}' not found. Attempting to generate a new token...")
-        try:
-            tv.open()  # This should initiate token generation
-            print("Token generated and saved successfully.")
-        except Exception as e:
-            print(f"Failed to generate token: {e}")
+    
+    try:
+        # Start listening for token authorization if needed
+        await tv.start_listening()
+        print("WebSocket connection established.")
+        
+        # Check if the TV supports the required APIs
+        if await tv.supported():
+            print("TV reports: Art Mode is supported.")
+        else:
+            print("TV reports: Art Mode is NOT supported.")
             return
-
-    # Open the WebSocket connection
-    tv.open()
-    print("Connected to The Frame TV.")
-
-    # Read the current brightness
-    current_brightness = tv.get_brightness()
-    print(f"Current brightness: {current_brightness}")
-
-    # Write to a text file in the config directory
-    brightness_file = "/config/brightness.txt"
-    with open(brightness_file, "w") as file:
-        file.write(str(current_brightness))
-
-    print(f"Brightness value saved to {brightness_file}.")
-
-    # Close the connection
-    tv.close()
-    print("Connection closed.")
+        
+        # Connect to the TV
+        try:
+            await tv.connect()
+            print("Connected to the Samsung Frame TV.")
+        except Exception as e:
+            print(f"Failed to connect to the Samsung Frame TV: {e}")
+            return
+        
+        # Retrieve current brightness
+        try:
+            current_brightness = await tv.get_brightness()
+            print(f"Current brightness: {current_brightness}")
+        except Exception as e:
+            print(f"Failed to retrieve brightness: {e}")
+            return
+        
+        # Write the brightness value to brightness.txt
+        try:
+            with open(BRIGHTNESS_OUTPUT_FILE, "w") as file:
+                file.write(str(current_brightness))
+            print(f"Brightness value saved to {BRIGHTNESS_OUTPUT_FILE}.")
+        except Exception as e:
+            print(f"Failed to write brightness to file: {e}")
+            return
+    
+    except exceptions.ConnectionFailure as e:
+        print(f"ConnectionFailure: {e}")
+    except exceptions.ResponseError as e:
+        print(f"ResponseError: {e}")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+    finally:
+        # Cleanly close the websocket connection
+        try:
+            await tv.close()
+            print("Connection closed.")
+        except Exception as e:
+            print(f"Failed to close connection: {e}")
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

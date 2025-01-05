@@ -2,7 +2,7 @@
   "name": "The Frame",
   "version": "1.0.1",
   "slug": "the_frame",
-  "description": "Addon to run Samsung TV Python scripts bu",
+  "description": "Addon to run Samsung TV Python scripts",
   "startup": "application",
   "boot": "auto",
   "ports": {
