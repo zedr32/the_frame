@@ -1,0 +1,37 @@
+{
+  "name": "The Frame",
+  "version": "1.0.1",
+  "slug": "the_frame",
+  "description": "Addon to run Samsung TV Python scripts",
+  "startup": "application",
+  "boot": "auto",
+  "ports": {
+    "8002/tcp": 8002
+  },
+  "options": {
+    "TV_IP": "192.168.1.33"
+  },
+  "schema": {
+    "TV_IP": "str"
+  },
+  "map": [
+    "config",
+    "ssl",
+    "share"
+  ],
+  "arch": ["armv7", "armhf", "amd64", "i386", "aarch64"],
+  "environment": {},
+  "host_network": false,
+  "homeassistant_api": false,
+  "options_schema": {
+    "type": "object",
+    "properties": {
+      "TV_IP": {
+        "type": "string",
+        "title": "Samsung TV IP Address",
+        "description": "IP address of your Samsung TV"
+      }
+    },
+    "required": ["TV_IP"]
+  }
+}
