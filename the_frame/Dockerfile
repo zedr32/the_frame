@@ -3,20 +3,27 @@ FROM python:3.11-slim
 
 # Set environment variables
 ENV LANG C.UTF-8
+ENV PYTHONUNBUFFERED=1
 
-# Install necessary packages
+# Install necessary system packages
 RUN apt-get update && \
     apt-get install -y git && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Set work directory
+# Set working directory
 WORKDIR /app
 
-# Install the Git repository
-RUN pip install --no-cache-dir git+https://github.com/nickwaterton/samsung-tv-ws-api.git
+# Upgrade pip and install Python dependencies
+RUN pip install --upgrade pip
+RUN pip install --no-cache-dir \
+    git+https://github.com/nickwaterton/samsung-tv-ws-api.git \
+    Pillow \
+    urllib3 \
+    aiohttp \
+    websockets
 
-# Copy addon files
+# Copy add-on files
 COPY brightness_script.py /app/
 COPY run.sh /app/
 
